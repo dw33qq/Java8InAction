@@ -6,6 +6,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.util.Arrays;
+
 /**
  * Created by DW on 2017/5/2.
  */
@@ -14,8 +16,8 @@ public class MqttPublishSample {
     public static void main(String[] args) {
 
         String topic        = "$dp";
-        String content      = "{\"datastreams\":[{\"id\":\"led\", \"datapoints\":[{\"value\": 30.2}]}]}";
-        int qos             = 2;
+        String content      = "{\"datastreams\":[{\"id\":\"abc\", \"datapoints\":[{\"value\": 30.2}]}]}";
+        int qos             = 1;
         String broker       = "tcp://183.230.40.39:6002";
         String clientId     = "5280490";
         String userName = "84661";
@@ -33,33 +35,18 @@ public class MqttPublishSample {
             sampleClient.connect(connOpts);
             System.out.println("Connected");
             System.out.println("Publishing message: "+content);
-            MqttMessage message = new MqttMessage(content.getBytes());
+            MqttMessage message = new MqttMessage();
             message.setQos(qos);
 
-         /*   String str ="{\"datastreams\":[{\"id\":\"led\", \"datapoints\":[{\"value\": 30.2}]}]}";
-
-            byte[] buf = new byte[10];
-
-            buf[0]=0x01; // Byte 1  json格式1字符串
-
-            buf[1]=0x00; //Byte 2 数据流 json的长度的高位字节
-            Integer iO = new Integer(str.length());
-            buf[2]=iO.byteValue(); // Byte3 数据流 json的长度的高位字节
-            message.setPayload(buf);*/
-
-            // 实例化一个UnicodeEncoding对象,用于转换.
-//            UnicodeEncoding unicode = new UnicodeEncoding();
             byte[] bytes = new byte[2000];
-            bytes[0] = Byte.parseByte("1");
-            bytes[1] = 0x00;
-            bytes[2] = 0x41;
-          /*  bytes[1] = Byte.parseByte("0");
-            bytes[2] = Byte.parseByte(content.length() + "");
-            bytes[3] = Byte.parseByte(content);*/
+            bytes[0] = 0x01;
+            bytes[1] = (byte) (content.length() >>> 8);
+            bytes[2] = (byte) (content.length() & 0xff);
+            byte[] json = content.getBytes();
 
-            //message.setPayload(bytes);
+            System.arraycopy(json, 0, bytes, 3, json.length);
 
-
+            message.setPayload(bytes);
 
             sampleClient.publish(topic, message);
             System.out.println("Message published");
